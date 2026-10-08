@@ -1,0 +1,47 @@
+# OpenJarvisProject
+
+> A generic, FOSS, local-first Jarvis-like AI agent for Linux and
+> Android. Runs on the user's own hardware, each device its own full
+> offline-capable instance, with a shared "second brain" memory
+> database synced peer-to-peer across devices without a required
+> central server. Early planning stage: no code exists yet, this repo
+> documents architecture decisions as they're made.
+
+This file follows the [llms.txt](https://llmstxt.org) convention: a
+flat, link-based index for AI agents/tools reading this repo, so a
+coding agent can find the relevant doc directly instead of reading
+everything. Each doc below is self-contained and states what's decided
+vs. still open — don't infer certainty beyond what a doc actually
+claims.
+
+## Core
+
+- [README.md](README.md): project summary, repo layout, current status
+- [vision.md](vision.md): what this is, why it exists, naming and
+  persona/branding model, relationship to the prior ZELIA project
+
+## Architecture
+
+- [architecture/runtime.md](architecture/runtime.md): Rust app layer +
+  C++ (`llama.cpp`) inference kernels + `burn.dev` fallback role;
+  staged validation methodology; open question on pruning-tooling
+  language (Python/PyTorch vs. all-Rust)
+- [architecture/model-compression.md](architecture/model-compression.md):
+  pruning/factorization/quantization/offloading/router-specialist
+  strategy, target model sizes, the pruning→publishing pipeline, and
+  real target hardware specs
+- [architecture/sync-and-devices.md](architecture/sync-and-devices.md):
+  per-device offline instances (not client-server), CRDT-based
+  (Automerge + Iroh) second-brain memory sync, LAN-discovery-is-not-
+  auth security model, zero-GMS requirement on Android, assistant-role
+  integration
+- [architecture/cloud-hosting.md](architecture/cloud-hosting.md):
+  planned optional paid cloud tier (self-hosted, donation-funded,
+  no-log privacy pitch) and its unresolved operational/legal risks
+
+## Process
+
+- [specs.md](specs.md): relationship between this repo, the planned
+  `OJPs` spec repo, and MCP (adopted for agent-to-tool invocation
+  specifically, not a replacement for OJPs)
+- [CONTRIBUTING.md](CONTRIBUTING.md): how to propose changes
