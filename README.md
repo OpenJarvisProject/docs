@@ -34,9 +34,10 @@ scratch.
 ## Repo layout in this org
 
 - **`docs`** (this repo) — human-facing documentation: what, why, how
-- **`OJPs`** (not yet created) — Nostr-NIPs-style numbered spec repo,
-  for anyone implementing a compatible client/backend/skill against a
-  stable protocol, not for general reading
+- [**`OJPs`**](https://github.com/OpenJarvisProject/OJPs) —
+  Nostr-NIPs-style numbered spec repo, for anyone implementing a
+  compatible client/backend/skill against a stable protocol, not for
+  general reading
 - The actual agent/runtime/model-tooling repos don't exist yet
 
 ## License
