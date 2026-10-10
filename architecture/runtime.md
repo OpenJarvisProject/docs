@@ -16,8 +16,10 @@
   [`model-compression.md`](model-compression.md)'s hardware section).
   This mirrors how Ollama (Go), GPT4All, LM Studio, and Jan already
   work: wrap the mature C++ inference core, write the application in
-  whatever language you actually want. Existing Rust bindings
-  (`llama-cpp-2` and similar crates) avoid needing raw hand-written FFI.
+  whatever language you actually want. The binding crate actually used
+  is [`llama-crab`](https://crates.io/crates/llama-crab) — actively
+  maintained, safe high-level API, CPU/Metal/CUDA/Vulkan/ROCm/OpenCL/
+  KleidiAI backend features.
 - **`burn.dev`** (pure-Rust ML framework) — a narrow, targeted role, not
   a general replacement for the above:
   1. GPU-backend portability via its `wgpu`/Vulkan backend, as a
@@ -65,3 +67,13 @@ machine:
 3. **Only then substitute the project's own pruned/quantized checkpoint**
    on the same harness from step 2 — anything that breaks here is
    attributable to the compression pipeline, not the runtime.
+
+**Status**: Stages 1 and 2 are done, live on the real RX 580 machine —
+see [`OpenJarvisProject/core`](https://github.com/OpenJarvisProject/core).
+Stage 2 produced byte-identical output to Stage 1, confirming
+correctness across the CPU→Vulkan backend swap. That repo's README also
+documents two real build gotchas hit along the way (a broken default
+Vulkan driver, and a gap in `llama.cpp`'s own Vulkan CMake wiring) —
+useful if you hit the same thing on similar hardware. Stage 3 (a
+project-produced pruned model) hasn't happened yet, since the pruning
+pipeline itself doesn't exist yet.

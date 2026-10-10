@@ -38,7 +38,10 @@ scratch.
   Nostr-NIPs-style numbered spec repo, for anyone implementing a
   compatible client/backend/skill against a stable protocol, not for
   general reading
-- The actual agent/runtime/model-tooling repos don't exist yet
+- [**`core`**](https://github.com/OpenJarvisProject/core) — the
+  reference runtime (Rust + `llama.cpp`). Early: a CPU/Vulkan inference
+  smoke test only so far, not yet an agent
+- Model-tooling (pruning/quantization pipeline) repo doesn't exist yet
 
 ## License
 

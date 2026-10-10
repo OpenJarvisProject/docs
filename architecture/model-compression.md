@@ -102,9 +102,13 @@ cases rather than assuming one size fits both.
 Not hypothetical — these are actual machines this project is being
 built against:
 
-- **Main desktop** (i5 + 16GB RAM, AMD RX 580): can run 7B+3B+1B
-  simultaneously (~1.5GB total), 10GB+ headroom for OS/apps. Also the
-  pruning workhorse, see above.
+- **Main desktop** (Ryzen 5 4500, ~23GB RAM, AMD RX 580 — confirmed via
+  driver string, not an RX 590 despite the PCI ID being shared across
+  the whole Ellesmere/Polaris rebadge family): can run 7B+3B+1B
+  simultaneously (~1.5GB total), plenty of headroom for OS/apps. Also
+  the pruning workhorse, see above. This is also where
+  [`runtime.md`](runtime.md)'s Stage 1/2 validation actually ran —
+  see [`OpenJarvisProject/core`](https://github.com/OpenJarvisProject/core).
 - **A converted Chromebook** (Mediatek MT8183, 8-core @ 1.99GHz, Mali
   GPU, Debian aarch64, ~3.79GiB RAM total, already running
   `fht-compositor` as its Wayland compositor): the real "weak CPU,
