@@ -66,13 +66,48 @@ alone is cheap enough to redo locally in minutes via `llama.cpp`'s
 `quantize` tool, but ships pre-baked by default so a fresh install has
 zero wait.
 
-**RX 580 ROCm caveat**: current ROCm releases have dropped clean
-support for the RX 580's chip generation (gfx803/Polaris) — it still
-mostly works via `HSA_OVERRIDE_GFX_VERSION`, but it's fragile/
-unofficial and could break on a ROCm upgrade. `burn`'s `wgpu`(Vulkan)
-backend (see [`runtime.md`](runtime.md)) is the candidate fallback,
-since Vulkan compute doesn't have ROCm's generation cutoffs — not yet
-tried, just identified as the likely fix if ROCm support fully breaks.
+**RX 580 ROCm caveat — confirmed dead, not just a theoretical risk**:
+tested directly (`rocminfo` fails at the HSA runtime level even with
+the `HSA_OVERRIDE_GFX_VERSION` workaround). `burn`'s `wgpu` (Vulkan)
+backend (see [`runtime.md`](runtime.md)) is the confirmed-working
+fallback instead — `wgpu` enumerates this card via Vulkan specifically
+(`RADV POLARIS10`, `DiscreteGpu`, preferred over its GL fallback
+adapter), and a real tensor computation through it produces a correct
+result. See
+[`OpenJarvisProject/model-tooling`](https://github.com/OpenJarvisProject/model-tooling).
+
+### Pruning method: whole-layer removal, not unstructured sparsity
+
+Wanda-style unstructured/N:M sparsity (zeroing individual weights) was
+considered and rejected — it doesn't shrink tensor shapes, so it
+produces no real file-size reduction and no speedup on `llama.cpp`
+(no sparse-tensor-core support). The pipeline instead removes entire
+transformer decoder blocks (structural/depth pruning), ranking each
+layer by cosine similarity between its input and output across
+calibration text (the "Block Influence" idea from ShortGPT-style depth
+pruning) — high similarity means the layer is acting close to an
+identity function and is safe to remove.
+
+**Removal is iterative and perplexity-validated, not a single batch** —
+this was a real correctness fix, not a refinement. A first version
+measured importance once on the intact model and removed several
+layers at once based on that snapshot; tested fairly (preserving the
+checkpoint's native dtype), it broke the model outright, producing
+fluent-looking complete gibberish rather than degraded-but-functional
+output. Removing one layer changes what the next layer receives as
+input, which a one-shot ranking never accounts for — sharper on a
+small model (24 layers) than on the larger models this technique is
+usually demonstrated on. The pipeline now re-measures importance after
+every single removal, validates each candidate against a held-out
+perplexity check, falls back to the next candidate on failure, and
+stops early rather than force a bad removal if nothing remaining
+passes.
+
+Confirmed on `Qwen/Qwen2.5-0.5B-Instruct`: targeted removing 6 of 24
+layers, correctly stopped at 5 once every remaining candidate failed
+validation — 24→19 layers, 954MB→812MB on disk, output stays fluent
+and on-topic. Quantization (a separate, stackable step) hasn't been
+applied yet — this only validates the pruning half of the stack.
 
 ## The free ultra-light tier doubles as the router
 

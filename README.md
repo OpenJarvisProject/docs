@@ -41,7 +41,9 @@ scratch.
 - [**`core`**](https://github.com/OpenJarvisProject/core) — the
   reference runtime (Rust + `llama.cpp`). Early: a CPU/Vulkan inference
   smoke test only so far, not yet an agent
-- Model-tooling (pruning/quantization pipeline) repo doesn't exist yet
+- [**`model-tooling`**](https://github.com/OpenJarvisProject/model-tooling) —
+  maintainer-side pruning/quantization pipeline (Python/PyTorch +
+  a Rust GPU-compute check). Never ships to end users
 
 ## License
 
