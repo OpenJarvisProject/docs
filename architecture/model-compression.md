@@ -195,3 +195,37 @@ built against:
   machine is also a natural dogfooding target for the compositor's
   AI-owned-input-seat work (see `sync-and-devices.md`), on genuinely
   low-end ARM hardware, not just the AI side.
+
+## Quantization-level sweep, a 7B test, and factorization (2026-10-11)
+
+**Quantization isn't free to stack with pruning**: swept Q8_0 through
+Q2_K across 0.5B/1.5B original and pruned variants on a fixed eval
+corpus. Pruned models degrade much worse under aggressive quantization
+than originals (pruned-0.5B: +49% perplexity going Q8→Q2 vs
+original-0.5B's +31%; pruned-1.5B: +354% vs +243%). Q2_K is a
+consistent cliff everywhere, especially severe once a model's already
+been pruned. Q4_K_M/Q3_K_M stay safe across the board — the more a
+model has already been compressed, the less additional quantization
+aggression it can safely absorb.
+
+**7B tested, GPU-only**: `Qwen/Qwen2.5-7B-Instruct` only tolerated
+removing 2/28 layers (7.1%) at the same 1.5x threshold — far less than
+the 0.5B/1.5B models' ~21% each. This complicates rather than confirms
+the earlier "model size doesn't change removability" finding; a
+plausible explanation is that a fixed-ratio threshold represents less
+absolute tolerance when a model's baseline perplexity is already
+lower/better, not yet confirmed. Both original and pruned 7B (Q4_K_M)
+fit entirely in the RX 580's 8GB VRAM with no partial offload needed.
+
+**Factorization (the previously-missing 5th technique) is now
+implemented**, in `model-tooling`'s `factorize.py` — low-rank
+decomposition (`W ≈ A×B` via SVD) of the attention and MLP linear
+layers, same iterative/perplexity-validated discipline as pruning.
+A real non-obvious gotcha: compression only happens when
+`k < (in×out)/(in+out)` — a "conservative" 75% keep-fraction is
+actually *above* that breakeven for square matrices, making the model
+*bigger*, not smaller. At a properly sub-breakeven 40% keep-fraction:
+35.4% reduction in the targeted layers, 1.48x baseline perplexity.
+Also caught (and fixed) three real save/reload bugs via a
+self-verification step added specifically to prevent exactly this
+class of problem — see `model-tooling`'s README for the full story.
