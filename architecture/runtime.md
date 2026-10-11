@@ -68,12 +68,16 @@ machine:
    on the same harness from step 2 — anything that breaks here is
    attributable to the compression pipeline, not the runtime.
 
-**Status**: Stages 1 and 2 are done, live on the real RX 580 machine —
-see [`OpenJarvisProject/core`](https://github.com/OpenJarvisProject/core).
+**Status**: all three stages are done, live on the real RX 580 machine
+— see [`OpenJarvisProject/core`](https://github.com/OpenJarvisProject/core).
 Stage 2 produced byte-identical output to Stage 1, confirming
-correctness across the CPU→Vulkan backend swap. That repo's README also
-documents two real build gotchas hit along the way (a broken default
-Vulkan driver, and a gap in `llama.cpp`'s own Vulkan CMake wiring) —
-useful if you hit the same thing on similar hardware. Stage 3 (a
-project-produced pruned model) hasn't happened yet, since the pruning
-pipeline itself doesn't exist yet.
+correctness across the CPU→Vulkan backend swap. Stage 3 swapped in a
+project-produced pruned model (see
+[`model-compression.md`](model-compression.md)'s controlled comparison)
+and also surfaced that the GPU compute buffer is driven by `n_ubatch`,
+not model depth — `OJP_N_CTX`/`OJP_N_UBATCH` env vars were added to
+make that testable. That repo's README documents the real build
+gotchas hit along the way (a broken default Vulkan driver, a gap in
+`llama.cpp`'s own Vulkan CMake wiring, and the missing upstream
+GGUF-conversion tooling) — useful if you hit the same things on
+similar hardware.

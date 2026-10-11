@@ -106,8 +106,50 @@ passes.
 Confirmed on `Qwen/Qwen2.5-0.5B-Instruct`: targeted removing 6 of 24
 layers, correctly stopped at 5 once every remaining candidate failed
 validation — 24→19 layers, 954MB→812MB on disk, output stays fluent
-and on-topic. Quantization (a separate, stackable step) hasn't been
-applied yet — this only validates the pruning half of the stack.
+and on-topic.
+
+### Stage 3 closed: controlled original-vs-pruned comparison
+
+Both the original and pruned models were converted through the exact
+same GGUF pipeline (`convert_hf_to_gguf.py` + a from-source
+`llama-quantize` build, both missing from the published Rust crate) to
+matched Q4_K_M quantization — using the externally-downloaded original
+GGUF as-is would have confounded quantization methodology with layer
+count as two variables at once. Results (5 reps/condition, low
+variance):
+
+- **CPU**: pruned uses 11.1% less peak RAM, runs 11.6% faster.
+- **GPU/Vulkan**: model weights -13.3% VRAM, KV-cache -20.8% (exactly
+  matches the 19/24 layer ratio), **compute/scratch buffer unchanged
+  (0%)** — that buffer turns out to be driven by `n_ubatch` (max
+  micro-batch size), not model depth at all; confirmed by isolating it
+  separately: exactly linear (512→298.5MiB, 256→149.25, 128→74.625,
+  64→37.3, each exactly half), independent of pruning or model size.
+  Net total VRAM savings land at -7.9%, well below the raw weight
+  reduction, because that fixed buffer is nearly half of total VRAM for
+  a model this small. Practical implication: `n_ubatch` is a real,
+  independent lever for cutting GPU memory on weak hardware, unrelated
+  to pruning — worth exposing as a real config option later.
+
+### Threshold sensitivity and a real removability cliff
+
+Confirmed the method is deterministic first (identical repeat runs,
+zero diff) before trusting any threshold comparison — ruled out CPU
+floating-point non-determinism as a confound. A looser
+`--max-ppl-ratio` doesn't just gate the final cutoff, it reshapes the
+whole greedy trajectory. On this model, 1.5x and 3.0x land at the same
+count (5/24) via different paths; 10.0x reaches 7/24 — a real
+structural cliff between those thresholds, not a smooth gradient.
+
+### Model size doesn't clearly change removability (yet)
+
+Repeated the identical method on `Qwen/Qwen2.5-1.5B-Instruct` (28
+layers): removed 6/28 (21.4%) at the same threshold, almost exactly
+matching the 0.5B model's 20.8%. The "bigger models tolerate
+proportionally more removal" expectation from depth-pruning literature
+(usually shown at much larger scale jumps, e.g. 7B vs 70B) isn't
+visible at this modest 3x size difference — worth knowing before
+assuming the method scales favorably on model size alone.
 
 ## The free ultra-light tier doubles as the router
 
